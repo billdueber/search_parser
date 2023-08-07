@@ -94,7 +94,7 @@ module SearchParser
       if !field_prefix
         parse_value(scanner)
       else
-        Node::Fielded.new(scanner[:field], parse_expr(scanner))
+        Node::Fielded.new(scanner[:field], parse_value(scanner))
       end
     end
 
