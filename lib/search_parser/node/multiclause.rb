@@ -3,5 +3,6 @@
 require "search_parser/node/generic"
 
 module SearchParser::Node
-  class Not < Generic; end
+  class MultiClause < GenericMulti
+  end
 end
