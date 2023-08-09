@@ -18,8 +18,8 @@ module SearchParser::Node
       dup(f: fieldname, n: value.dup.shake)
     end
 
-    def to_s
-      "#{fieldname}:(#{value})"
+    def to_s(top: :ignored)
+      "#{fieldname}:#{value}"
     end
 
     def inspect

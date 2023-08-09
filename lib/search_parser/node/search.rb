@@ -4,8 +4,24 @@ require "search_parser/node/multiclause"
 
 module SearchParser::Node
   class Search < MultiClause
+    def initialize(orig, values)
+      super(values)
+      @original = orig
+    end
+
+    def print_tree
+      puts ""
+      puts @original
+      puts self
+      super
+    end
+
+    def dup(original: @original, values: @values)
+      self.class.new(original, values)
+    end
+
     def shake
-      dup(values.map { |x| x.shake })
+      dup(original: @original, values: values.map { |x| x.shake })
     end
 
     def to_s(top: false)
@@ -14,6 +30,15 @@ module SearchParser::Node
       else
         values.join(" ")
       end
+    end
+
+    def printable_tree_structure
+      size = if values.size > 1
+        " (#{values.size} clauses)"
+      else
+        ""
+      end
+      {"#{name}#{size}" => values.map(&:printable_tree_structure)}
     end
 
     def testable

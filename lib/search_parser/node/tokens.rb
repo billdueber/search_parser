@@ -12,7 +12,7 @@ module SearchParser::Node
       to_s
     end
 
-    def to_s
+    def to_s(top: :ignored)
       if values.size == 1
         values.first.to_s
       else

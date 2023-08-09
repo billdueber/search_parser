@@ -6,6 +6,7 @@ module SearchParser::Node
     attr_accessor :value, :parent
 
     def initialize(value)
+      puts "#{name} got #{value.inspect}"
       @value = if value.is_a? String
         Tokens.new(Term.new(value))
       else
@@ -65,7 +66,8 @@ module SearchParser::Node
     alias_method :values, :value
 
     def initialize(values)
-      @value = values.is_a?(Array) ? values : [values]
+      @value = values.is_a?(Array) ? values.compact : [values]
+      puts "#{name} got #{@value.map(&:inspect)}"
       @value = @value.map do |v|
         if v.is_a? String
           Tokens.new(Term.new(v))

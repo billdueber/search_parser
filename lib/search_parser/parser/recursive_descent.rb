@@ -34,9 +34,15 @@ module SearchParser
       @field_re = %r{(?<field>#{@field_names.join("|")}):(?!\s)}
     end
 
+    def pt(str)
+      parse(str).print_tree
+    end
+
     def parse(str)
       scanner = StringScanner.new(str)
-      Node::Search.new(collect_expressions(scanner)).shake
+      Node::Search.new(str, collect_expressions(scanner)).shake
+    rescue => e
+      raise "Error at #{scanner.rest}"
     end
 
     def collect_expressions(scanner)
@@ -69,7 +75,9 @@ module SearchParser
       scanner.skip SPACE
       if scanner.scan(ANDOP)
         scanner.skip(SPACE)
-        Node::And.new(left, parse_expr(scanner))
+        right = parse_expr(scanner)
+        raise "No right in AND" unless right
+        Node::And.new(left, right)
       else
         left
       end
@@ -81,7 +89,10 @@ module SearchParser
       scanner.skip SPACE
       if scanner.scan(OROP)
         scanner.skip(SPACE)
-        Node::Or.new(left, parse_expr(scanner))
+        right = parse_expr(scanner)
+        raise "No right in OR" unless right
+
+        Node::Or.new(left, right)
       else
         left
       end
@@ -115,7 +126,7 @@ module SearchParser
       if !words.empty?
         Node::Tokens.new(words)
       else
-        nil # TODO: Change to a real EOS type?
+        raise "Really?" # TODO: Change to a real EOS type?
       end
     end
 
@@ -123,10 +134,10 @@ module SearchParser
       scanner.skip(SPACE)
       return [] if end_of_terms(scanner)
       w = if scanner.scan(PHRASE)
-        Node::Phrase.new(scanner[:phrase])
-      elsif scanner.scan(WORD)
-        Node::Term.new(scanner[:word])
-      end
+            Node::Phrase.new(scanner[:phrase])
+          elsif scanner.scan(WORD)
+            Node::Term.new(scanner[:word])
+          end
       return [] unless w
       collect_terms(scanner).unshift(w)
     end
@@ -139,12 +150,12 @@ module SearchParser
 
     def scannerify(scanner)
       case scanner
-      when StringScanner
-        scanner
-      when String
-        StringScanner.new(scanner)
-      else
-        raise "Need to pass in a StringScanner or String"
+        when StringScanner
+          scanner
+        when String
+          StringScanner.new(scanner)
+        else
+          raise "Need to pass in a StringScanner or String"
       end
     end
   end
