@@ -4,6 +4,18 @@ require "strscan"
 require_relative "../node"
 
 module SearchParser
+  class Context < StringScanner
+    attr_reader :stack
+
+    extend Forwardable
+
+    def_delegators :@stack, :push, :pop
+    def initialize(str)
+      super(str)
+      @stack = []
+    end
+  end
+
   class RecursiveDescent
     # expr = not_expr+
     # not_expr = and_expr | NOT and_expr
@@ -39,10 +51,10 @@ module SearchParser
     end
 
     def parse(str)
-      scanner = StringScanner.new(str)
+      scanner = Context.new(str)
       Node::Search.new(str, collect_expressions(scanner)).shake
     rescue => e
-      raise "Error at #{scanner.rest}"
+      raise "Error at #{scanner.rest} in #{scanner.pop}"
     end
 
     def collect_expressions(scanner)
@@ -63,7 +75,10 @@ module SearchParser
       scanner = scannerify(scanner)
       scanner.skip SPACE
       if scanner.scan(NOTOP)
-        Node::Not.new(parse_expr(scanner))
+        scanner.push :not
+        n = Node::Not.new(parse_expr(scanner))
+        scanner.pop
+        n
       else
         parse_and(scanner)
       end
@@ -74,9 +89,11 @@ module SearchParser
       left = parse_or(scanner)
       scanner.skip SPACE
       if scanner.scan(ANDOP)
+        scanner.stack.push :and
         scanner.skip(SPACE)
         right = parse_expr(scanner)
         raise "No right in AND" unless right
+        scanner.pop
         Node::And.new(left, right)
       else
         left
@@ -88,10 +105,11 @@ module SearchParser
       left = parse_fielded(scanner)
       scanner.skip SPACE
       if scanner.scan(OROP)
+        scanner.stack.push :or
         scanner.skip(SPACE)
         right = parse_expr(scanner)
         raise "No right in OR" unless right
-
+        scanner.pop
         Node::Or.new(left, right)
       else
         left
@@ -105,16 +123,25 @@ module SearchParser
       if !field_prefix
         parse_value(scanner)
       else
-        Node::Fielded.new(scanner[:field], parse_value(scanner))
+        scanner.stack.push :fielded
+        node = Node::Fielded.new(scanner[:field], parse_value(scanner))
+        scanner.pop
+        node
       end
     end
 
     def parse_value(scanner)
       scanner = scannerify(scanner)
-      if scanner.skip(LPAREN)
-        parse_expr(scanner).tap do
-          scanner.scan(RPAREN) or raise "Can't find the rparen"
+      if scanner.check(LPAREN)
+        startpos = scanner.pos
+        startrest = scanner.rest
+        scanner.skip(LPAREN)
+        scanner.stack.push :paren
+        e = parse_expr(scanner).tap do
+          scanner.scan(RPAREN) or raise "Can't find the rparen started at #{startpos} in '#{startrest}''"
         end
+        scanner.stack.pop
+        e
       else
         parse_terms(scanner)
       end
@@ -122,11 +149,12 @@ module SearchParser
 
     def parse_terms(scanner)
       scanner = scannerify(scanner)
+      raise "Error: unmatched double-quote at #{scanner.rest}" if scanner.check(DQUOTE)
       words = collect_terms(scanner)
       if !words.empty?
         Node::Tokens.new(words)
       else
-        raise "Really?" # TODO: Change to a real EOS type?
+        raise "Error at (#{scanner.pos}) in #{scanner.stack.last}"
       end
     end
 
@@ -134,10 +162,10 @@ module SearchParser
       scanner.skip(SPACE)
       return [] if end_of_terms(scanner)
       w = if scanner.scan(PHRASE)
-            Node::Phrase.new(scanner[:phrase])
-          elsif scanner.scan(WORD)
-            Node::Term.new(scanner[:word])
-          end
+        Node::Phrase.new(scanner[:phrase])
+      elsif scanner.scan(WORD)
+        Node::Term.new(scanner[:word])
+      end
       return [] unless w
       collect_terms(scanner).unshift(w)
     end
@@ -150,12 +178,12 @@ module SearchParser
 
     def scannerify(scanner)
       case scanner
-        when StringScanner
-          scanner
-        when String
-          StringScanner.new(scanner)
-        else
-          raise "Need to pass in a StringScanner or String"
+      when Context
+        scanner
+      when String
+        StringScanner.new(scanner)
+      else
+        raise "Need to pass in a Context or String"
       end
     end
   end
