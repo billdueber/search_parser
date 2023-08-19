@@ -61,8 +61,16 @@ module SearchParser
       scanner.skip SPACE
       return [] if scanner.eos?
       e = parse_expr(scanner)
+      puts "Got e of #{e}"
       return [] unless e
       collect_expressions(scanner).unshift(e)
+    rescue EOTerm => e
+      []
+    end
+
+    def parse_expressions(scanner)
+      e = collect_expressions(scanner)
+      Node::MultiClause.new(e)
     end
 
     def parse_expr(scanner)
@@ -137,7 +145,7 @@ module SearchParser
         startrest = scanner.rest
         scanner.skip(LPAREN)
         scanner.stack.push :paren
-        e = parse_expr(scanner).tap do
+        e = parse_expressions(scanner).tap do
           scanner.scan(RPAREN) or raise "Can't find the rparen started at #{startpos} in '#{startrest}''"
         end
         scanner.stack.pop
@@ -147,6 +155,8 @@ module SearchParser
       end
     end
 
+    class EOTerm < RuntimeError; end
+
     def parse_terms(scanner)
       scanner = scannerify(scanner)
       raise "Error: unmatched double-quote at #{scanner.rest}" if scanner.check(DQUOTE)
@@ -154,7 +164,7 @@ module SearchParser
       if !words.empty?
         Node::Tokens.new(words)
       else
-        raise "Error at (#{scanner.pos}) in #{scanner.stack.last}"
+        raise EOTerm.new
       end
     end
 
