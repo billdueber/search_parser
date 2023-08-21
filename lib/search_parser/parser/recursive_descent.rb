@@ -76,7 +76,21 @@ module SearchParser
     def parse_expr(scanner)
       scanner = scannerify(scanner)
       scanner.skip SPACE
-      Node::MultiClause.new(parse_not(scanner))
+      Node::MultiClause.new(parse_fielded(scanner))
+    end
+
+    def parse_fielded(scanner)
+      scanner = scannerify(scanner)
+      scanner.skip SPACE
+      field_prefix = scanner.scan(@field_re)
+      if !field_prefix
+        parse_not(scanner)
+      else
+        scanner.stack.push :fielded
+        node = Node::Fielded.new(scanner[:field], parse_expr(scanner))
+        scanner.pop
+        node
+      end
     end
 
     def parse_not(scanner)
@@ -121,20 +135,6 @@ module SearchParser
         Node::Or.new(left, right)
       else
         left
-      end
-    end
-
-    def parse_fielded(scanner)
-      scanner = scannerify(scanner)
-      scanner.skip SPACE
-      field_prefix = scanner.scan(@field_re)
-      if !field_prefix
-        parse_value(scanner)
-      else
-        scanner.stack.push :fielded
-        node = Node::Fielded.new(scanner[:field], parse_value(scanner))
-        scanner.pop
-        node
       end
     end
 
