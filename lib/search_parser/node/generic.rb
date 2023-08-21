@@ -6,7 +6,6 @@ module SearchParser::Node
     attr_accessor :value, :parent
 
     def initialize(value)
-      puts "#{name} got #{value.inspect}"
       @value = if value.is_a? String
         Tokens.new(Term.new(value))
       else
