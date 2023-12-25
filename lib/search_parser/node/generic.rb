@@ -66,7 +66,6 @@ module SearchParser::Node
 
     def initialize(values)
       @value = values.is_a?(Array) ? values.compact : [values]
-      puts "#{name} got #{@value.map(&:inspect)}"
       @value = @value.map do |v|
         if v.is_a? String
           Tokens.new(Term.new(v))
