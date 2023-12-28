@@ -65,7 +65,7 @@ module SearchParser
     end
   end
 
-  class RecursiveDescent
+  class RecursiveDescentOrig
     LPAREN = "("
     RPAREN = ")"
     SPACE = /\s+/

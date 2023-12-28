@@ -21,7 +21,7 @@ module SearchParser::Node
     end
 
     def printable_tree_structure
-      "<Tokens> #{self}"
+      {name => values.map(&:printable_tree_structure)}
     end
   end
 end

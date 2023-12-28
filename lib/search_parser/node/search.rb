@@ -11,8 +11,8 @@ module SearchParser::Node
 
     def print_tree
       puts ""
-      puts @original
-      puts self
+      puts "As given:       #{@original}"
+      puts "As interpreted: #{self}"
       super
     end
 

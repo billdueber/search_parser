@@ -2,7 +2,7 @@
 
 require "strscan"
 
-module SearchParser
+module SearchParser::Parsing
   class Scanner < StringScanner
     include Enumerable
 

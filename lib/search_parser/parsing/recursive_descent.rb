@@ -2,10 +2,9 @@
 
 require "strscan"
 require_relative "../node"
+require_relative "errors"
 
-module SearchParser
-  class EOInput < RuntimeError; end
-
+module SearchParser::Parsing
   class Marker
     attr_reader :rule, :string, :pos
 
@@ -61,7 +60,7 @@ module SearchParser
     end
   end
 
-  class RecursiveDescent2
+  class RecursiveDescent
     # expr = not_expr+
     # not_expr = and_expr | NOT and_expr
     # and_expr = or_expr | or_expr AND expr
@@ -69,7 +68,7 @@ module SearchParser
     # term = value | field colon value
     # fielded = field colon value
     # atom = word+ | phrase
-    # value = atom | '( expr )'
+    # value = atom | '(' expr ')'
 
     LPAREN = "("
     RPAREN = ")"
@@ -88,7 +87,7 @@ module SearchParser
 
     def initialize(field_names:)
       @field_names = field_names
-      @field_re = %r{(?<field>#{@field_names.join("|")}):(?!\s)}
+      @valid_field_re = %r{(?<field>#{@field_names.join("|")}):(?!\s)}
     end
 
     def pt(str)
@@ -97,10 +96,7 @@ module SearchParser
 
     def parse(str)
       context = Context.new(str)
-      Node::Search.new(str, collect_expressions(context)).shake
-    rescue => e
-      warn "Error at #{context.state.marked_string}"
-      raise "Abort"
+      SearchParser::Node::Search.new(str, collect_expressions(context)).shake
     end
 
     def collect_expressions(context)
@@ -114,7 +110,7 @@ module SearchParser
     def parse_expr(context)
       context = contextify(context)
       context.skip SPACE
-      Node::MultiClause.new(parse_not(context))
+      SearchParser::Node::MultiClause.new(parse_not(context))
     end
 
     def parse_not(context)
@@ -122,7 +118,7 @@ module SearchParser
       context.skip SPACE
       if context.scan(NOTOP)
         context.push :not
-        n = Node::Not.new(parse_expr(context))
+        n = SearchParser::Node::Not.new(parse_expr(context))
         context.pop
         n
       else
@@ -170,7 +166,7 @@ module SearchParser
         context.skip(SPACE)
         right = parse_expr(context)
         context.pop
-        Node::And.new(left, right)
+        SearchParser::Node::And.new(left, right)
       else
         left
       end
@@ -186,7 +182,7 @@ module SearchParser
         right = parse_expr(context)
         # raise "No right in OR" unless right
         context.pop
-        Node::Or.new(left, right)
+        SearchParser::Node::Or.new(left, right)
       else
         left
       end
@@ -195,12 +191,12 @@ module SearchParser
     def parse_fielded(context)
       context = contextify(context)
       context.skip SPACE
-      field_prefix = context.scan(@field_re)
+      field_prefix = context.scan(@valid_field_re)
       if !field_prefix
         parse_value(context)
       else
         context.push :fielded
-        node = Node::Fielded.new(context[:field], parse_value(context))
+        node = SearchParser::Node::Fielded.new(context[:field], parse_value(context))
         context.pop
         node
       end
@@ -226,9 +222,9 @@ module SearchParser
       context = contextify(context)
       words = collect_terms(context)
       if !words.empty?
-        Node::Tokens.new(words)
+        SearchParser::Node::Tokens.new(words)
       else
-        raise EOInput.new
+        raise SearchParser::Parsing::EOInput.new(context)
       end
     end
 
@@ -236,16 +232,16 @@ module SearchParser
       context.skip(SPACE)
       return [] if end_of_terms(context)
       w = if context.scan(PHRASE)
-        Node::Phrase.new(context[:phrase])
+        SearchParser::Node::Phrase.new(context[:phrase])
       elsif context.scan(WORD)
-        Node::Term.new(context[:word])
+        SearchParser::Node::Term.new(context[:word])
       end
       return [] unless w
       collect_terms(context).unshift(w)
     end
 
     def end_of_terms(context)
-      context.eos? or context.check(@field_re) or context.check(OP)
+      context.eos? or context.check(@valid_field_re) or context.check(OP)
     end
 
     private

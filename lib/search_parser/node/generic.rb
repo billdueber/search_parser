@@ -3,6 +3,8 @@
 require "tty-tree"
 module SearchParser::Node
   class Generic
+    include Comparable
+
     attr_accessor :value, :parent
 
     def initialize(value)
@@ -16,6 +18,10 @@ module SearchParser::Node
 
     def dup(v = value)
       self.class.new(v)
+    end
+
+    def <=>(other)
+      de_parenthesize(to_s) <=> de_parenthesize(other.to_s)
     end
 
     def shake
@@ -58,6 +64,15 @@ module SearchParser::Node
 
     def print_tree
       puts TTY::Tree.new(printable_tree_structure).render
+    end
+
+    def de_parenthesize(str)
+      m = /\A\((.*?)\)\Z/.match(str)
+      if m
+        m[1]
+      else
+        str
+      end
     end
   end
 
