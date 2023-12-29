@@ -120,7 +120,7 @@ module SearchParser::Parsing
       if context.scan(OROP)
         context.push :or
         context.skip(SPACE)
-        right = parse_expr(context)
+        right = parse_or(context)
         # raise "No right in OR" unless right
         context.pop
         SearchParser::Node::Or.new(left, right)
@@ -136,7 +136,7 @@ module SearchParser::Parsing
       if context.scan(ANDOP)
         context.push :and
         context.skip(SPACE)
-        right = parse_expr(context)
+        right = parse_and(context)
         context.pop
         SearchParser::Node::And.new(left, right)
       else
@@ -165,7 +165,7 @@ module SearchParser::Parsing
         parse_value(context)
       else
         context.push :fielded
-        node = SearchParser::Node::Fielded.new(context[:field], parse_expr(context))
+        node = SearchParser::Node::Fielded.new(context[:field], parse_value(context))
         context.pop
         node
       end
