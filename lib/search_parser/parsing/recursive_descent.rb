@@ -110,71 +110,12 @@ module SearchParser::Parsing
     def parse_expr(context)
       context = contextify(context)
       context.skip SPACE
-      SearchParser::Node::MultiClause.new(parse_not(context))
-    end
-
-    def parse_not(context)
-      context = contextify(context)
-      context.skip SPACE
-      if context.scan(NOTOP)
-        context.push :not
-        n = SearchParser::Node::Not.new(parse_expr(context))
-        context.pop
-        n
-      else
-        parse_and(context)
-      end
-    end
-    #
-    # def parse_and(context)
-    #   context = contextify(context)
-    #   left = parse_or(context)
-    #   context.skip(SPACE)
-    #   if context.check(ANDOP)
-    #     pos, rest = context.pos, context.rest
-    #     context.scan(ANDOP)
-    #     Node::And.new(left, parse_expr(context))
-    #   else
-    #     left
-    #   end
-    # rescue EOInput => e
-    #   puts "Unable to parse AND at position #{pos}, \"#{rest}\""
-    #   raise "Bailing..."
-    # end
-    #
-    # def parse_or(context)
-    #   context = contextify(context)
-    #   left = parse_fielded(context)
-    #   context.skip(SPACE)
-    #   if context.check(OROP)
-    #     pos, rest = context.pos, context.rest
-    #     context.scan(OROP)
-    #     Node::OR.new(left, parse_expr(context))
-    #   else
-    #     left
-    #   end
-    # rescue EOInput => e
-    #   puts "Unable to parse OR at position #{pos}, \"#{rest}\""
-    # end
-
-    def parse_and(context)
-      context = contextify(context)
-      left = parse_or(context)
-      context.skip SPACE
-      if context.scan(ANDOP)
-        context.push :and
-        context.skip(SPACE)
-        right = parse_expr(context)
-        context.pop
-        SearchParser::Node::And.new(left, right)
-      else
-        left
-      end
+      SearchParser::Node::MultiClause.new(parse_or(context))
     end
 
     def parse_or(context)
       context = contextify(context)
-      left = parse_fielded(context)
+      left = parse_and(context)
       context.skip SPACE
       if context.scan(OROP)
         context.push :or
@@ -188,6 +129,34 @@ module SearchParser::Parsing
       end
     end
 
+    def parse_and(context)
+      context = contextify(context)
+      left = parse_not(context)
+      context.skip SPACE
+      if context.scan(ANDOP)
+        context.push :and
+        context.skip(SPACE)
+        right = parse_expr(context)
+        context.pop
+        SearchParser::Node::And.new(left, right)
+      else
+        left
+      end
+    end
+
+    def parse_not(context)
+      context = contextify(context)
+      context.skip SPACE
+      if context.scan(NOTOP)
+        context.push :not
+        n = SearchParser::Node::Not.new(parse_expr(context))
+        context.pop
+        n
+      else
+        parse_fielded(context)
+      end
+    end
+
     def parse_fielded(context)
       context = contextify(context)
       context.skip SPACE
@@ -196,7 +165,7 @@ module SearchParser::Parsing
         parse_value(context)
       else
         context.push :fielded
-        node = SearchParser::Node::Fielded.new(context[:field], parse_value(context))
+        node = SearchParser::Node::Fielded.new(context[:field], parse_expr(context))
         context.pop
         node
       end
@@ -229,6 +198,7 @@ module SearchParser::Parsing
     end
 
     def collect_terms(context)
+      context = contextify(context)
       context.skip(SPACE)
       return [] if end_of_terms(context)
       w = if context.scan(PHRASE)
