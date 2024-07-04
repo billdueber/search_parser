@@ -43,19 +43,15 @@ module SearchParser::Node
     end
 
     def to_s(top: false)
-      if top
-        value.to_s
-      else
-        "(#{value})"
-      end
+      value.to_s
     end
 
     def inspect
       "<#{name}> #{value}"
     end
 
-    def testable
-      {name.downcase.to_sym => @value.testable}
+    def test_string
+      to_s
     end
 
     def printable_tree_structure

@@ -1,0 +1,61 @@
+# Source string | opt expected string | opt comment
+
+# The very basics
+
+one|one
+one two | (one two)
+(one two)
+a b AND c | (a b) AND c
+one two -- three | (one two -- three)
+
+# Basic operators and precedence
+
+a AND b OR c | (a AND b) OR c
+a AND b
+a OR b
+a OR b c | a OR (b c)
+a b AND c | (a b) AND c
+a OR b AND c | a OR (b AND c)
+(a OR b) AND c d | (a OR b) AND (c d)
+a OR b AND c OR d | a OR ((b AND c) OR d)
+
+not a | (not a)
+NOT a | NOT a
+NOT a b | NOT (a b)
+NOT a OR b| (NOT a) OR b
+
+a AND b NOT c | (a AND b) (NOT c)
+NOT a OR b | (NOT a) OR b
+a AND (b OR NOT c) | a AND (b OR (NOT c))
+a AND (b OR NOT c d) | a AND (b OR (NOT (c d)))
+
+
+# Phrases
+"a b"
+a "a b" OR c | (a "a b") OR c
+"a b"c | ("a b" c)
+a AND "b c" d | a AND ("b c" d)
+"a OR b" AND c OR d | ("a OR b" AND c) OR d | Ignore operator within a phrase
+
+
+# Basic fielded
+
+title:(one) | title:one
+title:(a AND b)
+title:a b AND c | title:(a b) AND c
+one two title:three four|(one two) title:(three four)
+(title:jones OR author:smith)|title:jones OR author:smith
+title:a AND b
+title:b OR d
+title:a OR b AND c  |  title:a OR (b AND c)
+title:(a AND b) OR c
+title:a b AND c | title:(a b) AND c
+one OR title:a b AND c | one OR (title:(a b) AND c)
+title:a NOT b | title:a (NOT b)
+NOT title:a b | (NOT title:(a b))
+NOT title:(NOT a b OR c) | (NOT (title:(NOT(a b) OR c))
+
+
+
+
+

@@ -149,7 +149,7 @@ module SearchParser::Parsing
       context.skip SPACE
       if context.scan(NOTOP)
         context.push :not
-        n = SearchParser::Node::Not.new(parse_expr(context))
+        n = SearchParser::Node::Not.new(parse_value(context))
         context.pop
         n
       else

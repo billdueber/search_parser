@@ -11,16 +11,17 @@ def file_triples(file, &blk)
     line.chomp!
     line.strip!
     next if line[0] == "#"
-    next if line == ""
+    next if line =~ /\A\s*\Z/
     given, expected, comment = line.split("|")
     expected = given if expected.nil?
     expected.strip!
+    comment ||= "#{given} -> #{expected}"
     yield given, expected, comment
   end
 end
 
 def test_triple(given, expected, comment)
-  it given do
+  it comment do
     if comment
       expect(given).to parse_to(expected), comment
     else
