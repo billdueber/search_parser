@@ -11,7 +11,7 @@ def file_triples(file, &blk)
     line.chomp!
     line.strip!
     next if line[0] == "#"
-    next if line =~ /\A\s*\Z/
+    next if /\A\s*\Z/.match?(line)
     given, expected, comment = line.split("|")
     expected = given if expected.nil?
     expected.strip!
@@ -23,7 +23,7 @@ end
 def test_triple(given, expected, comment)
   it comment do
     if comment
-      expect(given).to parse_to(expected), comment
+      expect(given).to parse_to(expected, comment)
     else
       expect(given).to parse_to(expected)
     end
@@ -36,11 +36,15 @@ RSpec::Matchers.define :parse_to do |exp|
     @given = given.strip
     @actual = P.parse(given).to_s.strip
     @expected = exp
-    # expect(@expected).to eq(@actual)
     @expected == @actual
   end
   failure_message do |given|
-    "Expected `#{@given}` to parse to `#{@expected}`, not `#{@actual}`"
+    str = <<~FAIL
+      Input    #{@given} 
+      Expected #{@expected}
+      GOT      #{@actual}
+    FAIL
+    str
   end
   diffable
   attr_reader :actual, :expected

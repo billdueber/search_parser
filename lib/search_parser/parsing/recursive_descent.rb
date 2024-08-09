@@ -3,14 +3,17 @@
 require "strscan"
 require_relative "../node"
 require_relative "errors"
+require "logger"
 
 module SearchParser::Parsing
+  L = Logger.new(STDOUT)
+  L.level = Logger::INFO
   class Marker
     attr_reader :rule, :string, :pos
 
     def initialize(rule, context)
       @rule = rule
-      @string = context.string
+      @string = context.rest
       @pos = context.pos
     end
 
@@ -43,7 +46,7 @@ module SearchParser::Parsing
     attr_reader :stack
 
     def initialize(str)
-      super(str)
+      super
       @stack = []
     end
 
@@ -53,6 +56,11 @@ module SearchParser::Parsing
 
     def pop
       @stack.pop
+    end
+
+    # @param rule [Symbol]
+    def in_a?(rule)
+      @stack.include?(rule)
     end
 
     def state
@@ -115,6 +123,7 @@ module SearchParser::Parsing
 
     def parse_or(context)
       context = contextify(context)
+      L.debug("OR: #{context.rest}")
       left = parse_and(context)
       context.skip SPACE
       if context.scan(OROP)
@@ -131,7 +140,9 @@ module SearchParser::Parsing
 
     def parse_and(context)
       context = contextify(context)
-      left = parse_not(context)
+      L.debug("AND: #{context.rest}")
+
+      left = parse_fielded(context)
       context.skip SPACE
       if context.scan(ANDOP)
         context.push :and
@@ -144,30 +155,45 @@ module SearchParser::Parsing
       end
     end
 
-    def parse_not(context)
+    # @param context [Context]
+    def parse_fielded(context)
       context = contextify(context)
+      L.debug("Fielded: #{context.rest}")
+
       context.skip SPACE
-      if context.scan(NOTOP)
-        context.push :not
-        n = SearchParser::Node::Not.new(parse_value(context))
-        context.pop
-        n
+      field_prefix = context.scan(@valid_field_re)
+      already_in_fielded = context.in_a?(:fielded)
+      if already_in_fielded
+        raise Error.new("Can't use fielded inside a fielded")
+      end
+      if !field_prefix
+        parse_not(context)
       else
-        parse_fielded(context)
+        context.push :fielded
+        val = SearchParser::Node::Fielded.new(context[:field], parse_not(context))
+        context.pop
+        val
       end
     end
 
-    def parse_fielded(context)
+    def parse_not(context)
       context = contextify(context)
       context.skip SPACE
-      field_prefix = context.scan(@valid_field_re)
-      if !field_prefix
-        parse_value(context)
-      else
-        context.push :fielded
-        node = SearchParser::Node::Fielded.new(context[:field], parse_value(context))
+      L.debug("NOT: #{context.rest}")
+      already_in_fielded = context.in_a?(:fielded)
+      if context.scan(NOTOP)
+        context.push :not
+        context.skip(SPACE)
+        val = if already_in_fielded
+          parse_value(context)
+        else
+          parse_fielded(context)
+        end
+        node = SearchParser::Node::Not.new(val)
         context.pop
         node
+      else
+        parse_value(context)
       end
     end
 
