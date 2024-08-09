@@ -24,9 +24,7 @@ module SearchParser
     def parse(str)
       @parser.parse(str)
     rescue SearchParser::Parsing::Error => e
-      context = e.context
-      require "pry"
-      binding.pry
+      "Error: #{e.context.state}"
     end
   end
 end

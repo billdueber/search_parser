@@ -25,7 +25,6 @@ NOT a b | NOT (a b)
 NOT a OR b| (NOT a) OR b
 
 a AND b NOT c | (a AND b) (NOT c)
-NOT a OR b | (NOT a) OR b
 a AND (b OR NOT c) | a AND (b OR (NOT c))
 a AND (b OR NOT c d) | a AND (b OR (NOT (c d)))
 
@@ -52,10 +51,10 @@ title:(a AND b) OR c
 title:a b AND c | title:(a b) AND c
 one OR title:a b AND c | one OR (title:(a b) AND c)
 title:a NOT b | title:a (NOT b)
-NOT title:a b | (NOT title:(a b))
-NOT title:(NOT a b OR c) | (NOT (title:(NOT(a b) OR c))
-
-
+NOT title:a b | NOT title:(a b)
+a AND NOT title:a b | a AND (NOT title:(a b))
+NOT a OR b | (NOT a) OR b
+NOT title:(NOT a b OR c) | NOT title:((NOT (a b)) OR c)
 
 
 

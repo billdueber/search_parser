@@ -86,8 +86,7 @@ module SearchParser::Node
       end
       @value.each { |n| n.parent = self }
     rescue => e
-      require "pry"
-      binding.pry
+      "AAAAA"
     end
 
     def shake

@@ -10,6 +10,6 @@ RSpec.describe SearchParser do
   end
 
   it "will add parens when needed" do
-    expect("one two AND three").to parse_to("(one two) AND three"), "Got it. It words"
+    expect("one two AND three").to parse_to("(one two) AND three"), "Got it. It works"
   end
 end
