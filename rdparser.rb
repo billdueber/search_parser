@@ -1,7 +1,5 @@
 require "strscan"
 
-a = "first q blah \\q blah2 q rest"
-
 # expr = not_expr+
 # not_expr = and_expr | NOT and_expr
 # and_expr = or_expr | or_expr AND expr
@@ -21,8 +19,8 @@ AND = "AND"
 OR = "OR"
 OP = /(AND|OR|NOT)/
 
-FIELDS = %w(title author)
-FIELD = %r((?<field>title|author):(?!\s))
+FIELDS = %w[title author]
+FIELD = %r{(?<field>title|author):(?!\s)}
 WORD = /[^\(\)\s]+/
 STOPCHAR = /[\(\)\s]/
 PHRASE = /"(?<phrase>[^"]+)"/
@@ -82,11 +80,11 @@ def parse_or(scanner)
 end
 
 def shallowify(exp)
-  if exp.is_a? KEYWORDS and exp.value.is_a? Array and exp.value.size == 1 and exp.value.first.is_a? PHRASENODE
+  if exp.is_a?(KEYWORDS) && exp.value.is_a?(Array) && (exp.value.size == 1) && exp.value.first.is_a?(PHRASENODE)
     return exp.value.first
   end
   return exp unless exp.is_a? EXPR
-  if exp.value.is_a? Array and exp.value.size == 1
+  if exp.value.is_a?(Array) && (exp.value.size == 1)
     shallowify(exp.value.first)
   elsif exp.value.is_a? Array
     exp
@@ -112,7 +110,6 @@ def parse_expr(scanner)
   scanner.skip SPACE
   parse_not(scanner)
 end
-
 
 def parse_fielded(scanner)
   scanner.skip SPACE
@@ -140,10 +137,10 @@ def collect_words(scanner)
   return [] if scanner.check(FIELD)
   return [] if scanner.check(OP)
   w = if scanner.scan(PHRASE)
-        PHRASENODE.new(scanner[:phrase])
-      else
-        scanner.scan(WORD)
-      end
+    PHRASENODE.new(scanner[:phrase])
+  else
+    scanner.scan(WORD)
+  end
   return [] unless w
   collect_words(scanner).unshift(w)
 end

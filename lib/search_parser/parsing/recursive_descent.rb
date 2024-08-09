@@ -6,7 +6,7 @@ require_relative "errors"
 require "logger"
 
 module SearchParser::Parsing
-  L = Logger.new(STDOUT)
+  L = Logger.new($stdout)
   L.level = Logger::INFO
   class Marker
     attr_reader :rule, :string, :pos
@@ -22,7 +22,7 @@ module SearchParser::Parsing
     end
 
     def rest
-      string[pos..-1]
+      string[pos..]
     end
 
     def before
@@ -30,7 +30,7 @@ module SearchParser::Parsing
     end
 
     def after
-      string[pos..-1]
+      string[pos..]
     end
 
     def char

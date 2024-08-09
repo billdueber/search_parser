@@ -1,4 +1,7 @@
 # For available configuration options, see:
 #   https://github.com/testdouble/standard
 ruby_version: 3.0
+ignore: 
+  - t.rb
+  - recursive_descent_orig.rb
 

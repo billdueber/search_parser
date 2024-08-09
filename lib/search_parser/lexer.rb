@@ -29,7 +29,7 @@ module SearchParser
     end
 
     def tokenize(str)
-      stack = NoNilsStack.new
+      NoNilsStack.new
     end
 
     # @param p [Pattern]

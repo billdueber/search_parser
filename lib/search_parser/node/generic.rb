@@ -85,7 +85,7 @@ module SearchParser::Node
         end
       end
       @value.each { |n| n.parent = self }
-    rescue => e
+    rescue
       "AAAAA"
     end
 

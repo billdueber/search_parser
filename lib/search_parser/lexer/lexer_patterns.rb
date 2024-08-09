@@ -5,7 +5,7 @@ require_relative "pattern"
 module SearchParser
   module Lexer
     class LexerPatterns < SimpleDelegator
-      BaseRegex = {
+      BASE_REGEX = {
         spaces: /\s+/,
         lparen: /\(/,
         rparen: /\)/,
@@ -17,14 +17,14 @@ module SearchParser
       }
 
       # Some combinations
-      ComboRegex = {
-        op: Regexp.union(BaseRegex[:notop], BaseRegex[:andop], BaseRegex[:orop]),
-        binop: Regexp.union(BaseRegex[:andop], BaseRegex[:orop]),
-        uop: BaseRegex[:notop]
+      COMBO_REGEX = {
+        op: Regexp.union(BASE_REGEX[:notop], BASE_REGEX[:andop], BASE_REGEX[:orop]),
+        binop: Regexp.union(BASE_REGEX[:andop], BASE_REGEX[:orop]),
+        uop: BASE_REGEX[:notop]
       }
 
-      DefaultRegex = BaseRegex.merge(ComboRegex)
-      DefaultPatterns = DefaultRegex.map do |id, reg|
+      DEFAULT_REGEX = BASE_REGEX.merge(COMBO_REGEX)
+      DEFAULT_PATTERNS = DEFAULT_REGEX.map do |id, reg|
         Pattern.new(id, reg)
       end
 
@@ -33,7 +33,7 @@ module SearchParser
       # @param [Array<Pattern>] List of Pattern objects
       # @param [Array<String>] searchable_field_names  List of field names that
       #   can support a fielded search; need to be computed at runtime
-      def initialize(patterns: DefaultPatterns, searchable_field_names: [])
+      def initialize(patterns: DEFAULT_PATTERNS, searchable_field_names: [])
         @patterns = patterns.each_with_object({}) { |p, h| h[p.id] = p }
         @searchable_field_names = searchable_field_names
         unless searchable_field_names.empty?
