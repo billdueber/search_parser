@@ -5,8 +5,8 @@
 one|one
 one two | (one two)
 (one two)
-a b AND c | (a b) AND c
-one two -- three | (one two -- three)
+a b AND c | (a b) AND c | group terms has highest precedence
+one two -- three | (one two -- three) | non-special punctuation considered a term
 
 # Basic operators and precedence
 
@@ -26,8 +26,8 @@ NOT a OR b| (NOT a) OR b
 
 a AND b NOT c | (a AND b) (NOT c)
 a AND (b OR NOT c) | a AND (b OR (NOT c))
-a AND (b OR NOT c d) | a AND (b OR (NOT (c d)))
-
+a AND (b OR NOT c d) | a AND (b OR (NOT (c d)))  | Basic precedence
+NOT a OR b | (NOT a) OR b | NOT binding
 
 # Phrases
 "a b"
@@ -37,24 +37,23 @@ a AND "b c" d | a AND ("b c" d)
 "a OR b" AND c OR d | ("a OR b" AND c) OR d | Ignore operator within a phrase
 
 
+
 # Basic fielded
 
 title:(one) | title:one
 title:(a AND b)
-title:a b AND c | title:(a b) AND c
-one two title:three four|(one two) title:(three four)
+title:a b AND c | title:(a b) AND c | fielded terms end at an operator
+one two title:three four|(one two) title:(three four) | terms bind higher than fielded
 (title:jones OR author:smith)|title:jones OR author:smith
 title:a AND b
 title:b OR d
 title:a OR b AND c  |  title:a OR (b AND c)
 title:(a AND b) OR c
 title:a b AND c | title:(a b) AND c
-one OR title:a b AND c | one OR (title:(a b) AND c)
+one OR title:a b AND c | one OR (title:(a b) AND c) | precedence with fielded and ops
 title:a NOT b | title:a (NOT b)
-NOT title:a b | NOT title:(a b)
-a AND NOT title:a b | a AND (NOT title:(a b))
-NOT a OR b | (NOT a) OR b
-NOT title:(NOT a b OR c) | NOT title:((NOT (a b)) OR c)
+NOT title:a b | NOT title:(a b) | terms on a fielded bind higher than NOT
+a AND NOT title:a b | a AND (NOT title:(a b)) | Testing AND NOT
+NOT title:(NOT a b OR c) | NOT title:((NOT (a b)) OR c)| NOT within fielded
 
-
-
+a b ANDc OR ORe | (a b ANDc) OR ORe | Make sure AND/OR/NOT must be followed by a break

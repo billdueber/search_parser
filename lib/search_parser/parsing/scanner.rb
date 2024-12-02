@@ -23,7 +23,7 @@ module SearchParser::Parsing
     FIELDCHECK = /#{FIELDNAME}:[^\s]/
     FIELDSCAN = /(?<field>#{FIELDNAME}):/
 
-    OPS = %w[AND OR NOT]
+    OPS = [ANDCHECK, ORCHECK, NOTCHECK]
 
     def each
       return enum_for(:each) unless block_given?
@@ -61,13 +61,15 @@ module SearchParser::Parsing
       scan(RPAREN) && (return :rparen)
       scan(DQUOTE) && (return :dquote)
       # scan(COLON) && (return :colon)
-      check(FIELDCHECK) && (scan(FIELDSCAN)
-                            return Field.new(self[:field]))
+      if check(FIELDCHECK)
+        scan(FIELDSCAN)
+        return Field.new(self[:field]))
+      end
 
       if check(TERM)
         scan(TERM)
         t = self[:term]
-        if OPS.include? t
+        if OPS.any? {|op| op.match?(t)}
           return t.downcase.to_sym
         else
           return Term.new(self[:term])

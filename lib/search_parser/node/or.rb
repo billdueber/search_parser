@@ -16,6 +16,14 @@ module SearchParser::Node
       @value.last
     end
 
+    def binary?
+      true
+    end
+
+    def unary?
+      false
+    end
+
     def to_s(top: false)
       if top
         "#{left} #{name.upcase} #{right}"

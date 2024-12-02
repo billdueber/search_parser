@@ -27,7 +27,7 @@ module SearchParser::Node
     end
 
     def printable_tree_structure
-      {fieldname => value.printable_tree_structure}
+      {"#{fieldname} <field>" => value.printable_tree_structure}
     end
   end
 end

@@ -3,70 +3,13 @@
 require "strscan"
 require_relative "../node"
 require_relative "errors"
+require_relative "marker"
+require_relative "context"
 require "logger"
 
 module SearchParser::Parsing
   L = Logger.new($stdout)
   L.level = Logger::INFO
-  class Marker
-    attr_reader :rule, :string, :pos
-
-    def initialize(rule, context)
-      @rule = rule
-      @string = context.rest
-      @pos = context.pos
-    end
-
-    def to_s
-      "'#{rule}' at #{pos} (#{rest})"
-    end
-
-    def rest
-      string[pos..]
-    end
-
-    def before
-      string[0..(pos - 2)]
-    end
-
-    def after
-      string[pos..]
-    end
-
-    def char
-      string[pos - 1]
-    end
-
-    def marked_string(open_string = "*", close_string = "*")
-      "#{before}#{open_string}#{char}#{close_string}#{after}"
-    end
-  end
-
-  class Context < StringScanner
-    attr_reader :stack
-
-    def initialize(str)
-      super
-      @stack = []
-    end
-
-    def push(rule)
-      @stack.push Marker.new(rule.to_sym, self)
-    end
-
-    def pop
-      @stack.pop
-    end
-
-    # @param rule [Symbol]
-    def in_a?(rule)
-      @stack.include?(rule)
-    end
-
-    def state
-      @stack.last
-    end
-  end
 
   class RecursiveDescent
     # expr = not_expr+
@@ -88,10 +31,10 @@ module SearchParser::Parsing
     STOPCHAR = /[()\s]/
     PHRASE = /"(?<phrase>[^"]+)"/
 
-    NOTOP = "NOT"
-    ANDOP = "AND"
-    OROP = "OR"
-    OP = /(AND|OR|NOT)/
+    NOTOP = /NOT[\s\(]/
+    ANDOP = /AND[\s\(]/
+    OROP = /OR[\s\(]/
+    OP = /(?<op>NOT|AND|OR)[\s\(]/
 
     def initialize(field_names:)
       @field_names = field_names

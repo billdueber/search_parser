@@ -44,8 +44,8 @@ module SearchParser
 
       # @param field_names [Array<String>] List of field names that support a fielded search
       # @return [Pattern] A Pattern object that will match a field token for those fields
-      def field_pat(fields)
-        field_name_or = fields.join("|")
+      def field_pat(field_names)
+        field_name_or = field_names.join("|")
         field_pat = /(?<value>#{field_name_or}):/
         Pattern.new(:field, field_pat, capture_name: "value")
       end
